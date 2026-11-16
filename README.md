@@ -15,7 +15,7 @@ Temperature · gas/smoke · intrusion · Wi-Fi — monitored continuously, with 
 </div>
 
 > **Wokwi link:** the button above opens a blank ESP32 MicroPython project. Replace `diagram.json` with
-> [`wokwi/diagram.json`](wokwi/diagram.json), add the other files of [`wokwi/`](wokwi/), then press ▶ Start.
+> [`wokwi/diagram.json`](wokwi/diagram.json), add the other files of [`wokwi/`](wokwi/), then press  Start.
 > (Once the project is saved publicly on Wokwi, put its URL here and in `index.html`, constant `WOKWI_URL`.)
 
 ##  Interactive presentation site
