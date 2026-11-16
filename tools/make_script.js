@@ -40,9 +40,13 @@ const c = [
     "27 tests automatiques passent, et j’ai rejoué dix scénarios sur la logique. Dans Wokwi, j’ai vraiment observé le Wi-Fi, l’heure et la passerelle.",
     "Je tiens à dire les limites. Le gaz simulé fluctue autour de 2000. L’e-mail réel n’a pas été envoyé, faute d’identifiants ; la connexion vers Gmail est possible et mon client est testé sur un faux serveur. Le PIR et la panne réseau simulée sont validés sur ordinateur.",
     "En conclusion : un problème réel, tout le cours mobilisé, une logique testée, et une hypothèse corrigée par les mesures. Merci, je suis prêt pour vos questions."]),
-  H1("Questions probables du jury"),
-  ...QA.flatMap(([q, a]) => [P([R("Q : " + q, { bold: true })], { align: "left" }), P("R : " + a)]),
+  P("Les questions probables du jury et leurs réponses sont dans le fichier séparé « Questions_jury_et_reponses »."),
   H1("Commandes utiles pendant la démonstration"),
   table([["Touche (console série)", "Effet"], ["n", "active / lève une panne Wi-Fi simulée"], ["m", "envoie un e-mail de test (repli LOCAL sans identifiants)"], ["s", "affiche l'état détaillé"], ["g", "diagnostic réseau (ports TCP testés)"]], [3000, 6600]),
 ];
-build(c, "dist/Script_oral_surveillance_local_technique.docx");
+build(c, "livrables/3_Script_oral/Script_oral_surveillance_local_technique.docx");
+const qa = [
+  ...header("Questions probables du jury", "Surveillance intelligente d’un local technique télécom · questions et réponses"),
+  ...QA.flatMap(([q, a], i) => [P([R((i + 1) + ". " + q, { bold: true })], { align: "left" }), P("Réponse : " + a)]),
+];
+build(qa, "livrables/4_Questions_jury_et_reponses/Questions_jury_et_reponses.docx");

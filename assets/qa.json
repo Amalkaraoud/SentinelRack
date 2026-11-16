@@ -1,0 +1,46 @@
+[
+ [
+  "Pourquoi ce projet ?",
+  "Parce que c'est un problème réel : un local technique est souvent sans personne. Il utilise tout le cours : GPIO, capteurs, écran, Wi-Fi, e-mail."
+ ],
+ [
+  "Pourquoi le seuil 2000 ?",
+  "C'est le seuil du TP2 sur la valeur analogique du MQ-2 (0 à 4095). L'alerte part quand la valeur dépasse strictement 2000. J'ai ajouté une pré-alerte à 1500, qui est mon choix."
+ ],
+ [
+  "Comment testez-vous la passerelle sans ping ?",
+  "Le ping (ICMP) n'existe pas en MicroPython ni dans Wokwi. Je tente une connexion TCP : acceptée ou refusée veut dire que la passerelle répond. Dans Wokwi, le port 80 est injoignable et le port 53 répond, donc je teste le 53."
+ ],
+ [
+  "Que se passe-t-il si le Wi-Fi tombe ?",
+  "L'OLED affiche « WiFi:PERDU », l'état passe à ATTENTION (cause WIFI), la carte retente la connexion toutes les 10 secondes. Aucun e-mail n'est tenté puisqu'il ne partirait pas."
+ ],
+ [
+  "L'e-mail a-t-il été vraiment envoyé ?",
+  "Non, pas dans cette version : je n'ai pas d'identifiants dans le simulateur. J'ai vérifié que la connexion TCP vers Gmail est possible et testé mon client SMTP contre un faux serveur local. Si l'envoi est impossible, l'alerte reste sur l'OLED et la console."
+ ],
+ [
+  "Pourquoi un mot de passe d'application ?",
+  "Gmail refuse le mot de passe normal pour les programmes. Le mot de passe d'application se met dans mail_config.py, qui n'est jamais publié."
+ ],
+ [
+  "Pourquoi attendre 10 secondes pour le gaz ?",
+  "Le MQ-2 chauffe au démarrage. Dans le simulateur, la première lecture vaut 3123 puis redescend. On l'affiche avec une étoile mais on ne décide pas dessus."
+ ],
+ [
+  "Pourquoi séparer monitor.py du reste ?",
+  "Monitor.py ne touche pas le matériel : je le teste sur PC avec 27 tests, puis il tourne à l'identique sur l'ESP32."
+ ],
+ [
+  "Le gaz oscille entre ATTENTION et CRITIQUE dans la simulation, pourquoi ?",
+  "Le MQ-2 simulé donne environ 1900 à 2100 avec du bruit, quelle que soit la valeur ppm. Je n'ai pas élucidé la cause ; sur matériel réel il faut calibrer. Les scénarios de gaz sont validés sur la logique, sur PC."
+ ],
+ [
+  "Qu'est-ce qui est le vôtre et qu'est-ce qui vient du cours ?",
+  "Les broches, le seuil 2000, l'OLED, le Wi-Fi et l'interface umail viennent du cours. Les seuils de température, la pré-alerte, l'anti-spam, la sonde de passerelle et la séparation logique/matériel sont mes choix. Le client SMTP et le pilote OLED sont réécrits avec la même interface."
+ ],
+ [
+  "Que feriez-vous ensuite ?",
+  "Envoyer les mesures vers un serveur MQTT, journaliser avec l'heure, rendre les seuils réglables, ajouter une alimentation de secours."
+ ]
+]

@@ -152,4 +152,4 @@ def evaluate(r):                      # r = mesures
   T(s, bullets(["Problème réel : surveiller un local technique télécom", "Capteurs, écran, LED, buzzer, Wi-Fi, e-mail : tout le cours mobilisé", "Logique séparée du matériel : testée et défendable", "Test sur la cible = hypothèse corrigée (passerelle port 53)", "Suite : MQTT, journalisation, seuils réglables"], 21), { x: 0.6, y: 1.6, w: 12.1, h: 4.2 });
   T(s, "Merci. Questions ?", { x: 0.6, y: 6.0, w: 12.1, h: 0.7, fontSize: 28, bold: true, fontFace: HF, align: "center" }); }
 
-pres.writeFile({ fileName: "dist/Presentation_surveillance_local_technique.pptx" }).then(() => console.log("ok"));
+pres.writeFile({ fileName: "livrables/1_Presentation_PowerPoint/Presentation_surveillance_local_technique.pptx" }).then(() => console.log("ok"));

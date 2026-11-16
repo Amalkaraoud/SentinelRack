@@ -139,4 +139,4 @@ const c = [
     except Exception as e:
         return False, "LOCAL", "echec SMTP: %s" % e`),
 ];
-build(c, "dist/Rapport_surveillance_local_technique.docx");
+build(c, "livrables/2_Rapport/Rapport_surveillance_local_technique.docx");

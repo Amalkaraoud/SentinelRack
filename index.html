@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SentinelRack — Surveillance intelligente d'un local technique télécom</title>
+<meta name="description" content="ESP32 / MicroPython : surveillance d'une baie réseau (température, gaz, intrusion, Wi-Fi) avec alertes e-mail. Projet MPI1, Faculté des Sciences de Sfax.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23070b14'/%3E%3Ccircle cx='32' cy='32' r='12' fill='none' stroke='%2322d3ee' stroke-width='4'/%3E%3Ccircle cx='32' cy='32' r='4' fill='%2334d399'/%3E%3C/svg%3E">
+<style>
+:root{--bg:#060a13;--bg2:#0b1220;--card:rgba(255,255,255,.045);--line:rgba(255,255,255,.1);--tx:#e8eefc;--mu:#93a1c0;--cy:#22d3ee;--gr:#34d399;--am:#fbbf24;--rd:#fb4b6b;--vi:#8b7bff;--r:18px}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;scroll-padding-top:76px}
+body{background:var(--bg);color:var(--tx);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.6;overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.wrap{max-width:1180px;margin:0 auto;padding:0 24px}
+section{padding:110px 0;position:relative}
+h2{font-size:clamp(30px,4.4vw,50px);line-height:1.1;letter-spacing:-.02em;margin-bottom:14px}
+.eyebrow{font-size:13px;letter-spacing:.18em;text-transform:uppercase;color:var(--cy);font-weight:600;margin-bottom:14px;display:flex;align-items:center;gap:10px}
+.eyebrow:before{content:"";width:28px;height:2px;background:linear-gradient(90deg,var(--cy),transparent)}
+.lead{color:var(--mu);font-size:19px;max-width:760px}
+.grad{background:linear-gradient(100deg,var(--cy),var(--gr) 45%,var(--vi));-webkit-background-clip:text;background-clip:text;color:transparent}
+/* aurora + grid */
+.aurora{position:fixed;inset:0;z-index:-2;background:radial-gradient(60% 50% at 15% 10%,rgba(34,211,238,.16),transparent 60%),radial-gradient(50% 45% at 85% 20%,rgba(139,123,255,.16),transparent 60%),radial-gradient(60% 50% at 50% 100%,rgba(52,211,153,.10),transparent 60%),var(--bg)}
+.grid{position:fixed;inset:0;z-index:-1;background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:56px 56px;opacity:.28;mask-image:radial-gradient(ellipse at 50% 20%,#000 20%,transparent 75%);-webkit-mask-image:radial-gradient(ellipse at 50% 20%,#000 20%,transparent 75%)}
+/* nav */
+nav{position:fixed;top:0;left:0;right:0;z-index:50;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);background:rgba(6,10,19,.62);border-bottom:1px solid var(--line)}
+nav .wrap{display:flex;align-items:center;justify-content:space-between;height:64px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:.01em}
+.brand i{width:26px;height:26px;border-radius:50%;border:3px solid var(--cy);position:relative;box-shadow:0 0 14px var(--cy)}
+.brand i:after{content:"";position:absolute;inset:5px;background:var(--gr);border-radius:50%;box-shadow:0 0 10px var(--gr);animation:pulse 2s infinite}
+nav ul{display:flex;gap:22px;list-style:none;font-size:14px;color:var(--mu)}
+nav ul a{padding:6px 2px;position:relative;transition:.2s}
+nav ul a:hover,nav ul a.on{color:var(--tx)}
+nav ul a.on:after{content:"";position:absolute;left:0;right:0;bottom:-2px;height:2px;background:var(--cy);border-radius:2px;box-shadow:0 0 10px var(--cy)}
+.btn{display:inline-flex;align-items:center;gap:10px;padding:14px 24px;border-radius:14px;font-weight:600;font-size:16px;border:1px solid var(--line);background:var(--card);transition:transform .2s,box-shadow .2s,border-color .2s;cursor:pointer;color:var(--tx);font-family:inherit}
+.btn:hover{transform:translateY(-2px);border-color:rgba(255,255,255,.3)}
+.btn.pri{background:linear-gradient(100deg,#0bb7d6,#22d3a0);color:#04121a;border:0;box-shadow:0 10px 40px -8px rgba(34,211,238,.6)}
+.btn.pri:hover{box-shadow:0 14px 50px -6px rgba(34,211,238,.85)}
+.btn.sm{padding:9px 16px;font-size:14px;border-radius:11px}
+@media(max-width:900px){nav ul{display:none}}
+/* hero */
+#hero{min-height:100vh;display:flex;align-items:center;padding-top:120px;padding-bottom:70px}
+.hero-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:50px;align-items:center}
+@media(max-width:960px){.hero-grid{grid-template-columns:1fr}}
+.chip{display:inline-flex;align-items:center;gap:8px;padding:7px 14px;border:1px solid var(--line);border-radius:99px;font-size:13px;color:var(--mu);background:var(--card)}
+.chip b{width:8px;height:8px;border-radius:50%;background:var(--gr);box-shadow:0 0 10px var(--gr);animation:pulse 1.6s infinite}
+h1{font-size:clamp(46px,7.6vw,96px);line-height:.98;letter-spacing:-.035em;margin:22px 0 20px;font-weight:800}
+.hero p.lead{margin-bottom:34px}
+.cta{display:flex;flex-wrap:wrap;gap:14px;margin-bottom:46px}
+.hero .cta .btn,.cta .btn{white-space:nowrap}
+.hero-grid .cta .btn{padding:13px 18px;font-size:15px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+@media(max-width:560px){.stats{grid-template-columns:repeat(2,1fr)}}
+.stat{padding:16px 18px;border:1px solid var(--line);border-radius:16px;background:var(--card)}
+.stat b{display:block;font-size:34px;letter-spacing:-.02em;font-weight:800}
+.stat span{font-size:13px;color:var(--mu)}
+/* device */
+.device{position:relative;padding:22px;border-radius:26px;background:linear-gradient(160deg,rgba(255,255,255,.09),rgba(255,255,255,.02));border:1px solid var(--line);box-shadow:0 40px 100px -30px rgba(34,211,238,.35);transform-style:preserve-3d;transition:transform .15s}
+.device:before{content:"";position:absolute;inset:-1px;border-radius:26px;background:conic-gradient(from var(--a,0deg),transparent 0 70%,var(--cy),transparent);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;padding:1.5px;animation:spin 6s linear infinite}
+@property --a{syntax:"<angle>";initial-value:0deg;inherits:false}
+@keyframes spin{to{--a:360deg}}
+.oledwrap{background:#000;border-radius:12px;padding:10px;border:2px solid #1b2538;box-shadow:inset 0 0 30px rgba(34,211,238,.18)}
+canvas.oled{width:100%;display:block;image-rendering:pixelated;border-radius:4px}
+.leds{display:flex;gap:16px;align-items:center;margin-top:16px;padding:12px 16px;border-radius:14px;background:rgba(0,0,0,.35);border:1px solid var(--line)}
+.led{width:22px;height:22px;border-radius:50%;background:#1a2233;border:2px solid #2a3650;transition:.25s}
+.led.g.on{background:var(--gr);box-shadow:0 0 22px 4px var(--gr),0 0 60px var(--gr);border-color:#b6ffe3}
+.led.y.on{background:var(--am);box-shadow:0 0 22px 4px var(--am),0 0 60px var(--am);border-color:#ffe9a8}
+.led.r.on{background:var(--rd);box-shadow:0 0 22px 4px var(--rd),0 0 70px var(--rd);border-color:#ffc0cb;animation:blink .5s infinite}
+.buzz{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:13px;color:var(--mu)}
+.buzz svg{width:22px;height:22px;stroke:var(--mu);fill:none;stroke-width:2}
+.buzz.on svg{stroke:var(--rd);animation:shake .25s infinite}
+.state{margin-top:14px;display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--mu)}
+.state b{font-size:15px;padding:5px 12px;border-radius:99px;border:1px solid;transition:.25s}
+.state b.s0{color:var(--gr);border-color:var(--gr);background:rgba(52,211,153,.1)}
+.state b.s1{color:var(--am);border-color:var(--am);background:rgba(251,191,36,.1)}
+.state b.s2{color:var(--rd);border-color:var(--rd);background:rgba(251,75,107,.12);box-shadow:0 0 24px rgba(251,75,107,.4)}
+@keyframes pulse{50%{opacity:.35;transform:scale(.86)}}
+@keyframes blink{50%{opacity:.45}}
+@keyframes shake{25%{transform:rotate(-12deg)}75%{transform:rotate(12deg)}}
+.scroll{position:absolute;bottom:26px;left:50%;transform:translateX(-50%);color:var(--mu);font-size:12px;letter-spacing:.2em;text-align:center}
+.scroll i{display:block;width:22px;height:36px;border:2px solid var(--mu);border-radius:12px;margin:8px auto 0;position:relative}
+.scroll i:after{content:"";position:absolute;left:50%;top:6px;width:4px;height:7px;margin-left:-2px;background:var(--cy);border-radius:2px;animation:wheel 1.6s infinite}
+@keyframes wheel{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(14px)}}
+/* reveal */
+.rv{opacity:0;transform:translateY(34px);transition:opacity .9s cubic-bezier(.2,.7,.2,1),transform .9s cubic-bezier(.2,.7,.2,1)}
+.rv.in{opacity:1;transform:none}
+.rv.d1{transition-delay:.1s}.rv.d2{transition-delay:.2s}.rv.d3{transition-delay:.3s}.rv.d4{transition-delay:.4s}
+/* cards */
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:44px}
+@media(max-width:860px){.cards{grid-template-columns:1fr}}
+.card{padding:28px;border-radius:var(--r);background:var(--card);border:1px solid var(--line);position:relative;overflow:hidden;transition:transform .3s,border-color .3s}
+.card:hover{transform:translateY(-6px);border-color:rgba(255,255,255,.25)}
+.card:before{content:"";position:absolute;width:220px;height:220px;right:-80px;top:-80px;border-radius:50%;background:var(--c,var(--cy));filter:blur(70px);opacity:.22;transition:.4s}
+.card:hover:before{opacity:.5}
+.card .ic{width:54px;height:54px;border-radius:15px;display:grid;place-items:center;margin-bottom:18px;background:rgba(255,255,255,.06);border:1px solid var(--line)}
+.card .ic svg{width:28px;height:28px;stroke:var(--c,var(--cy));fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.card h3{font-size:21px;margin-bottom:8px}
+.card p{color:var(--mu);font-size:15.5px}
+.card .pin{display:inline-block;margin-top:14px;font-size:12px;padding:4px 10px;border:1px solid var(--line);border-radius:99px;color:var(--mu)}
+/* stepper */
+.stepper{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:40px 0 18px}
+@media(max-width:760px){.stepper{grid-template-columns:repeat(2,1fr)}}
+.stp{padding:16px 18px;border-radius:16px;border:1px solid var(--line);background:var(--card);cursor:pointer;text-align:left;color:var(--tx);font-family:inherit;position:relative;overflow:hidden;transition:.25s}
+.stp small{color:var(--mu);font-size:12px;letter-spacing:.14em}
+.stp b{display:block;font-size:20px;margin-top:2px}
+.stp i{position:absolute;left:0;bottom:0;height:3px;width:0;background:var(--cy);box-shadow:0 0 10px var(--cy)}
+.stp.on{border-color:var(--cy);background:rgba(34,211,238,.09);box-shadow:0 0 30px -6px rgba(34,211,238,.5)}
+.stp.on i{animation:fill var(--dur,4.5s) linear forwards}
+@keyframes fill{to{width:100%}}
+.stp-text{min-height:64px;color:var(--mu);font-size:17px;max-width:900px}
+.stp-text b{color:var(--tx)}
+/* architecture */
+.arch{margin-top:30px;border:1px solid var(--line);border-radius:24px;background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.01));padding:14px;overflow:hidden}
+.arch svg{width:100%;height:auto;display:block}
+.nd rect.b{fill:#0c1426;stroke:#2a3a5c;stroke-width:1.5;transition:.3s}
+.nd text{fill:#e8eefc;font-size:15px;font-weight:600;font-family:Inter,system-ui,sans-serif}
+.nd text.s{fill:#93a1c0;font-size:12px;font-weight:400}
+.nd{opacity:.55;transition:.4s}
+.nd.act{opacity:1}
+.nd.act rect.b{stroke:var(--cy);filter:drop-shadow(0 0 10px rgba(34,211,238,.6))}
+.nd.hot rect.b{stroke:var(--rd);filter:drop-shadow(0 0 16px rgba(251,75,107,.9));animation:blink .6s infinite}
+.nd.warn rect.b{stroke:var(--am);filter:drop-shadow(0 0 14px rgba(251,191,36,.8))}
+.ln{fill:none;stroke:#2f4268;stroke-width:2;stroke-dasharray:6 8;animation:dash 1.1s linear infinite;transition:stroke .3s}
+.ln.act{stroke:var(--cy)}
+.ln.red{stroke:var(--rd)}.ln.amb{stroke:var(--am)}
+@keyframes dash{to{stroke-dashoffset:-28}}
+.pk{fill:var(--cy);filter:drop-shadow(0 0 6px var(--cy))}
+.pk.red{fill:var(--rd);filter:drop-shadow(0 0 8px var(--rd))}
+.pk.amb{fill:var(--am)}
+/* simulator */
+.sim{display:grid;grid-template-columns:1fr 1fr;gap:26px;margin-top:40px}
+@media(max-width:960px){.sim{grid-template-columns:1fr}}
+.panel{padding:26px;border-radius:22px;background:var(--card);border:1px solid var(--line)}
+.panel h3{font-size:18px;margin-bottom:18px;display:flex;align-items:center;gap:10px}
+.ctl{margin-bottom:18px}
+.ctl label{display:flex;justify-content:space-between;font-size:14px;color:var(--mu);margin-bottom:6px}
+.ctl label b{color:var(--tx);font-variant-numeric:tabular-nums}
+input[type=range]{width:100%;-webkit-appearance:none;appearance:none;height:6px;border-radius:6px;background:linear-gradient(90deg,var(--cy),var(--vi));outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 0 0 4px rgba(34,211,238,.35),0 4px 14px rgba(0,0,0,.5);cursor:pointer}
+input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:#fff;border:0;cursor:pointer}
+.tg{display:flex;flex-wrap:wrap;gap:10px;margin-top:6px}
+.tgb{padding:9px 14px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--tx);cursor:pointer;font-size:14px;font-family:inherit;transition:.2s}
+.tgb:hover{border-color:var(--cy)}
+.tgb.on{background:rgba(34,211,238,.15);border-color:var(--cy)}
+.sc{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:22px}
+.sc button{padding:12px 8px;border-radius:13px;border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--tx);cursor:pointer;font-family:inherit;font-size:14px;font-weight:600;transition:.2s}
+.sc button:hover{transform:translateY(-2px)}
+.sc button.a{border-color:rgba(251,75,107,.5)}.sc button.a:hover{box-shadow:0 0 26px rgba(251,75,107,.45)}
+.sc button.w{border-color:rgba(251,191,36,.5)}.sc button.w:hover{box-shadow:0 0 26px rgba(251,191,36,.4)}
+.sc button.n{border-color:rgba(52,211,153,.5)}.sc button.n:hover{box-shadow:0 0 26px rgba(52,211,153,.4)}
+.log{background:#03060d;border:1px solid var(--line);border-radius:14px;padding:14px;height:150px;overflow:auto;font-size:12.5px;color:#9fe9c8;margin-top:16px}
+.log div{padding:1px 0;white-space:pre-wrap}.log .e{color:#ff8da3}.log .m{color:#7fd6ff}.log .w{color:#ffd77a}
+.note{font-size:13px;color:var(--mu);margin-top:12px}
+.flash{position:fixed;inset:0;pointer-events:none;z-index:40;opacity:0;box-shadow:inset 0 0 160px 40px var(--rd)}
+.flash.go{animation:fl 1.1s ease-out}
+@keyframes fl{0%{opacity:.85}100%{opacity:0}}
+/* shots */
+.shots{display:grid;grid-template-columns:1.25fr .75fr;gap:26px;margin-top:40px;align-items:start}
+@media(max-width:960px){.shots{grid-template-columns:1fr}}
+.shot{position:relative;border-radius:20px;overflow:hidden;border:1px solid var(--line);background:#000;cursor:zoom-in}
+.shot img{width:100%;display:block}
+.hs{position:absolute;width:30px;height:30px;margin:-15px 0 0 -15px;border-radius:50%;background:var(--cy);color:#04121a;font-weight:800;display:grid;place-items:center;font-size:14px;box-shadow:0 0 0 0 rgba(34,211,238,.7);animation:ring 2s infinite;cursor:pointer;border:0}
+@keyframes ring{70%{box-shadow:0 0 0 18px rgba(34,211,238,0)}100%{box-shadow:0 0 0 0 rgba(34,211,238,0)}}
+.legend{display:flex;flex-direction:column;gap:12px}
+.lg{padding:16px 18px;border-radius:16px;border:1px solid var(--line);background:var(--card);display:flex;gap:14px;transition:.25s;cursor:pointer}
+.lg.on,.lg:hover{border-color:var(--cy);background:rgba(34,211,238,.08)}
+.lg i{flex:none;width:28px;height:28px;border-radius:50%;background:var(--cy);color:#04121a;font-weight:800;display:grid;place-items:center;font-style:normal;font-size:14px}
+.lg b{display:block;margin-bottom:2px}.lg span{color:var(--mu);font-size:14.5px}
+.oleds{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:26px}
+@media(max-width:760px){.oleds{grid-template-columns:repeat(2,1fr)}}
+.oleds figure{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#000;transition:.3s}
+.oleds figure:hover{transform:scale(1.04);box-shadow:0 0 30px -4px var(--cy)}
+.oleds img{width:100%;display:block;filter:invert(1) hue-rotate(160deg) saturate(2.2)}
+.oleds figcaption{font-size:12.5px;color:var(--mu);padding:8px 10px;background:#070c18}
+/* wokwi cta */
+.wokwi{margin-top:36px;padding:44px;border-radius:26px;text-align:center;background:radial-gradient(80% 120% at 50% 0%,rgba(34,211,238,.2),transparent 70%),var(--card);border:1px solid rgba(34,211,238,.4);position:relative;overflow:hidden}
+.wokwi h3{font-size:30px;margin-bottom:8px}
+.wokwi p{color:var(--mu);max-width:640px;margin:0 auto 24px}
+.btn.big{padding:20px 38px;font-size:20px;border-radius:18px}
+.btn.big:after{content:"";position:absolute}
+.pulse-btn{animation:glow 2.4s infinite}
+@keyframes glow{50%{box-shadow:0 10px 70px -4px rgba(34,211,238,1)}}
+/* table */
+.chips{display:flex;flex-wrap:wrap;gap:10px;margin:28px 0}
+.chipb{padding:9px 16px;border-radius:99px;border:1px solid var(--line);background:var(--card);color:var(--tx);cursor:pointer;font-family:inherit;font-size:14px;transition:.2s}
+.chipb.on{background:var(--cy);color:#04121a;border-color:var(--cy);font-weight:700}
+.tr{border:1px solid var(--line);border-radius:20px;overflow:hidden}
+.tr table{width:100%;border-collapse:collapse;font-size:14.5px}
+.tr th{background:rgba(255,255,255,.06);text-align:left;padding:14px 16px;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--mu)}
+.tr td{padding:13px 16px;border-top:1px solid var(--line);vertical-align:top}
+.tr tr{transition:.3s}.tr tr.dim{opacity:.18}
+.tag{display:inline-block;padding:3px 10px;border-radius:99px;background:rgba(139,123,255,.16);color:#c5bdff;font-size:12.5px;white-space:nowrap}
+.tr td:last-child{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;color:var(--mu)}
+@media(max-width:760px){.tr{overflow-x:auto}.tr table{min-width:720px}}
+/* deck */
+.deck{margin-top:36px;display:grid;grid-template-columns:1fr;gap:16px}
+.viewer{position:relative;border-radius:22px;overflow:hidden;border:1px solid var(--line);background:#fff;box-shadow:0 40px 90px -40px rgba(34,211,238,.4)}
+.viewer img{width:100%;display:block}
+.vn{position:absolute;top:50%;transform:translateY(-50%);width:48px;height:48px;border-radius:50%;border:0;background:rgba(6,10,19,.8);color:#fff;font-size:22px;cursor:pointer;backdrop-filter:blur(6px);transition:.2s}
+.vn:hover{background:var(--cy);color:#04121a}.vn.l{left:14px}.vn.r{right:14px}
+.thumbs{display:flex;gap:10px;overflow-x:auto;padding-bottom:8px}
+.thumbs img{height:70px;border-radius:8px;border:2px solid transparent;cursor:pointer;opacity:.55;transition:.2s;flex:none}
+.thumbs img.on,.thumbs img:hover{opacity:1;border-color:var(--cy)}
+.dl{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-top:40px}
+@media(max-width:960px){.dl{grid-template-columns:repeat(2,1fr)}}@media(max-width:520px){.dl{grid-template-columns:1fr}}
+.dcard{padding:24px;border-radius:20px;border:1px solid var(--line);background:var(--card);display:flex;flex-direction:column;gap:10px;transition:.3s;position:relative;overflow:hidden}
+.dcard:hover{transform:translateY(-6px);border-color:var(--cy);box-shadow:0 20px 50px -20px rgba(34,211,238,.55)}
+.dcard .n{font-size:44px;font-weight:800;color:rgba(255,255,255,.1);line-height:1}
+.dcard h4{font-size:19px}.dcard p{color:var(--mu);font-size:14.5px;flex:1}
+.dcard .row{display:flex;gap:8px;flex-wrap:wrap}
+/* qa */
+.qa{margin-top:36px;display:grid;gap:12px}
+details{border:1px solid var(--line);border-radius:16px;background:var(--card);transition:.25s;overflow:hidden}
+details[open]{border-color:var(--cy);background:rgba(34,211,238,.06)}
+summary{padding:18px 22px;cursor:pointer;font-weight:600;font-size:17px;list-style:none;display:flex;gap:14px;align-items:center}
+summary::-webkit-details-marker{display:none}
+summary:before{content:"+";flex:none;width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.08);display:grid;place-items:center;font-size:18px;transition:.25s}
+details[open] summary:before{content:"–";background:var(--cy);color:#04121a;transform:rotate(180deg)}
+details p{padding:0 22px 20px 64px;color:var(--mu);font-size:16px}
+/* honest */
+.two{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:36px}
+@media(max-width:860px){.two{grid-template-columns:1fr}}
+.list{padding:26px;border-radius:20px;border:1px solid var(--line);background:var(--card)}
+.list h3{margin-bottom:14px;font-size:20px}
+.list li{list-style:none;padding:9px 0 9px 32px;position:relative;color:var(--mu);font-size:15.5px;border-top:1px solid var(--line)}
+.list li:first-of-type{border-top:0}
+.list li:before{position:absolute;left:0;top:9px;font-weight:800}
+.list.ok li:before{content:"✓";color:var(--gr)}.list.no li:before{content:"!";color:var(--am)}
+footer{padding:60px 0 80px;border-top:1px solid var(--line);color:var(--mu);font-size:14px;text-align:center}
+footer .big{font-size:22px;color:var(--tx);font-weight:700;margin-bottom:6px}
+/* lightbox + modal */
+.lb{position:fixed;inset:0;z-index:100;background:rgba(3,6,13,.92);display:none;place-items:center;padding:30px;cursor:zoom-out}
+.lb.on{display:grid}.lb img{max-width:96vw;max-height:90vh;border-radius:12px}
+.modal{max-width:560px;background:#0b1220;border:1px solid var(--cy);border-radius:20px;padding:30px;cursor:default}
+.modal h3{margin-bottom:12px}.modal ol{margin:14px 0 20px 22px;color:var(--mu)}.modal li{margin:7px 0}
+.prog{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--cy),var(--gr),var(--vi));z-index:60;width:0;box-shadow:0 0 12px var(--cy)}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.rv{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+<div class="aurora"></div><div class="grid"></div><div class="prog" id="prog"></div><div class="flash" id="flash"></div>
+
+<nav><div class="wrap">
+  <a href="#hero" class="brand"><i></i>SentinelRack</a>
+  <ul>
+    <li><a href="#probleme">Problème</a></li><li><a href="#fonctionnement">Fonctionnement</a></li><li><a href="#simulateur">Simulateur</a></li>
+    <li><a href="#composants">Composants</a></li><li><a href="#demo">Démo Wokwi</a></li>
+    <li><a href="#cours">Cours &amp; TP</a></li><li><a href="#livrables">Livrables</a></li><li><a href="#jury">Jury</a></li>
+  </ul>
+  <a class="btn sm pri" href="#demo" data-wokwi>▶ Wokwi</a>
+</div></nav>
+
+<!-- HERO -->
+<section id="hero"><div class="wrap hero-grid">
+  <div>
+    <span class="chip rv"><b></b> Projet MPI1 · ESP32 + MicroPython · Faculté des Sciences de Sfax</span>
+    <h1 class="rv d1">Sentinel<span class="grad">Rack</span></h1>
+    <p class="lead rv d2">Le veilleur de nuit de la salle technique télécom. Température, gaz, intrusion et Wi-Fi surveillés en continu — avec alertes lumineuses, sonores et par e-mail.</p>
+    <div class="cta rv d3">
+      <a class="btn pri big-ish" href="#demo" data-wokwi>▶ Lancer la simulation Wokwi</a>
+      <a class="btn" href="#simulateur">⚡ Essayer le simulateur</a>
+      <a class="btn" href="#livrables">📄 Livrables</a>
+    </div>
+    <div class="stats rv d4">
+      <div class="stat"><b data-n="3">0</b><span>capteurs</span></div>
+      <div class="stat"><b data-n="27">0</b><span>tests réussis</span></div>
+      <div class="stat"><b data-n="15">0</b><span>fonctions reliées au cours</span></div>
+      <div class="stat"><b data-n="16">0</b><span>diapos de soutenance</span></div>
+    </div>
+  </div>
+  <div class="rv d2">
+    <div class="device" id="device">
+      <div class="oledwrap"><canvas class="oled" id="oledHero" width="640" height="320"></canvas></div>
+      <div class="leds"><span class="led g" id="hg"></span><span class="led y" id="hy"></span><span class="led r" id="hr"></span>
+        <div class="buzz" id="hbz"><svg viewBox="0 0 24 24"><path d="M11 5 6 9H2v6h4l5 4zM15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg>buzzer</div></div>
+      <div class="state"><span>Aperçu en direct · logique identique à <span class="mono">monitor.py</span></span><b class="s0" id="hs">NORMAL</b></div>
+    </div>
+  </div>
+  <div class="scroll">DÉFILER<i></i></div>
+</div></section>
+
+<!-- PROBLEME -->
+<section id="probleme"><div class="wrap">
+  <div class="eyebrow rv">Le problème</div>
+  <h2 class="rv">Une pièce vide, <span class="grad">trois risques</span>.</h2>
+  <p class="lead rv">Un local technique abrite routeurs, commutateurs et serveurs. Personne n'y est en permanence. Quand ça tourne mal, on s'en aperçoit trop tard : service coupé, matériel détruit, accès non autorisé.</p>
+  <div class="cards">
+    <div class="card rv" style="--c:var(--am)"><div class="ic"><svg viewBox="0 0 24 24"><path d="M14 14.8V4a2 2 0 0 0-4 0v10.8a4 4 0 1 0 4 0z"/></svg></div><h3>Surchauffe</h3><p>Climatisation ou ventilation en panne : la température monte, les équipements s'arrêtent. Seuils : 28 °C attention, 35 °C critique.</p><span class="pin mono">DHT22 · GPIO 15</span></div>
+    <div class="card rv d1" style="--c:var(--rd)"><div class="ic"><svg viewBox="0 0 24 24"><path d="M12 3c1 3 5 5 5 9a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-3-1-5 1-8z"/></svg></div><h3>Gaz &amp; fumée</h3><p>Début d'incendie ou fuite : la valeur analogique du MQ-2 monte. Alerte critique au-delà de 2000, comme dans le TP2.</p><span class="pin mono">MQ-2 · GPIO 34 / 26</span></div>
+    <div class="card rv d2" style="--c:var(--vi)"><div class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="7" r="3.5"/><path d="M5 21v-2a5 5 0 0 1 5-5h4a5 5 0 0 1 5 5v2"/></svg></div><h3>Intrusion</h3><p>Une présence non prévue dans la salle. Le capteur PIR détecte le mouvement et lève une alerte immédiate.</p><span class="pin mono">PIR · GPIO 14</span></div>
+  </div>
+</div></section>
+
+<!-- FONCTIONNEMENT -->
+<section id="fonctionnement"><div class="wrap">
+  <div class="eyebrow rv">Fonctionnement</div>
+  <h2 class="rv">Lire. Décider. Afficher. <span class="grad">Alerter.</span></h2>
+  <p class="lead rv">Quatre verbes pour tout comprendre. Cliquez une étape — le schéma ci-dessous s'illumine en même temps.</p>
+  <div class="stepper rv" id="stepper">
+    <button class="stp on" data-s="0"><small>ÉTAPE 1</small><b>Lire</b><i></i></button>
+    <button class="stp" data-s="1"><small>ÉTAPE 2</small><b>Décider</b><i></i></button>
+    <button class="stp" data-s="2"><small>ÉTAPE 3</small><b>Afficher</b><i></i></button>
+    <button class="stp" data-s="3"><small>ÉTAPE 4</small><b>Alerter</b><i></i></button>
+  </div>
+  <p class="stp-text" id="stpText"></p>
+  <div class="arch rv">
+  <svg viewBox="0 0 1000 470" id="archSvg" role="img" aria-label="Architecture : capteurs, ESP32, sorties">
+    <defs><linearGradient id="chipg" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stop-color="#112447"/><stop offset="1" stop-color="#0a1530"/></linearGradient></defs>
+    <!-- lines -->
+    <path id="p1" class="ln" d="M250 85 C330 85 330 200 420 200"/>
+    <path id="p2" class="ln" d="M250 235 L420 235"/>
+    <path id="p3" class="ln" d="M250 385 C330 385 330 270 420 270"/>
+    <path id="p4" class="ln" d="M610 200 C690 200 690 70 760 70"/>
+    <path id="p5" class="ln" d="M610 235 L760 235"/>
+    <path id="p6" class="ln" d="M610 270 C690 270 690 400 760 400"/>
+    <g id="pkIn"></g><g id="pkOut"></g>
+    <!-- sensors -->
+    <g class="nd" id="nDHT" data-g="0"><rect class="b" x="30" y="45" width="220" height="80" rx="16"/><text x="52" y="82">DHT22</text><text class="s" x="52" y="104">Température · Humidité</text></g>
+    <g class="nd" id="nMQ" data-g="0"><rect class="b" x="30" y="195" width="220" height="80" rx="16"/><text x="52" y="232">MQ-2</text><text class="s" x="52" y="254">Gaz · Fumée (ADC)</text></g>
+    <g class="nd" id="nPIR" data-g="0"><rect class="b" x="30" y="345" width="220" height="80" rx="16"/><text x="52" y="382">PIR</text><text class="s" x="52" y="404">Mouvement · Intrusion</text></g>
+    <!-- esp -->
+    <g class="nd" id="nESP" data-g="1"><rect class="b" x="420" y="120" width="190" height="230" rx="20" fill="url(#chipg)"/>
+      <text x="445" y="158" style="font-size:20px">ESP32</text><text class="s" x="445" y="180">MicroPython</text>
+      <text class="s mono" x="445" y="222">monitor.py</text><text class="s" x="445" y="241">3 niveaux d&apos;état</text>
+      <text class="s mono" x="445" y="276">net.py</text><text class="s" x="445" y="295">Wi-Fi · passerelle · NTP</text>
+      <text class="s mono" x="445" y="326">notify.py · umail</text></g>
+    <!-- outputs -->
+    <g class="nd" id="nOLED" data-g="2"><rect class="b" x="760" y="30" width="215" height="80" rx="16"/><text x="780" y="66">OLED SSD1306</text><text class="s" x="780" y="88">I2C · mesures, état, IP, heure</text></g>
+    <g class="nd" id="nLED" data-g="2"><rect class="b" x="760" y="195" width="215" height="80" rx="16"/><text x="780" y="231">LED + Buzzer</text><text class="s" x="780" y="253">vert · jaune · rouge · sonore</text></g>
+    <g class="nd" id="nMAIL" data-g="3"><rect class="b" x="760" y="360" width="215" height="80" rx="16"/><text x="780" y="396">Wi-Fi → E-mail SMTP</text><text class="s" x="780" y="418">repli : OLED + console</text></g>
+  </svg></div>
+</div></section>
+
+<!-- SIMULATEUR -->
+<section id="simulateur"><div class="wrap">
+  <div class="eyebrow rv">Simulateur interactif</div>
+  <h2 class="rv">Provoquez une alerte, <span class="grad">regardez la réaction</span>.</h2>
+  <p class="lead rv">Ce simulateur rejoue en JavaScript les mêmes règles que <span class="mono">monitor.py</span> (seuils, causes, écran 7 lignes × 16 caractères). C'est une illustration pédagogique — la sortie réelle de la carte, elle, est montrée plus bas dans la section Démo.</p>
+  <div class="sim">
+    <div class="panel rv">
+      <h3>🎛 Capteurs &amp; réseau</h3>
+      <div class="sc">
+        <button class="a" data-sc="intrusion">🚪 Intrusion</button><button class="a" data-sc="fumee">💨 Fumée</button><button class="a" data-sc="chaleur">🔥 Surchauffe</button>
+        <button class="w" data-sc="humide">💧 Humidité</button><button class="w" data-sc="wifi">📡 Wi-Fi perdu</button><button class="n" data-sc="normal">✔ Tout normal</button>
+      </div>
+      <div class="ctl"><label>Température <b id="vT">24 °C</b></label><input type="range" id="iT" min="10" max="45" step="0.5" value="24"></div>
+      <div class="ctl"><label>Humidité <b id="vH">40 %</b></label><input type="range" id="iH" min="5" max="95" step="1" value="40"></div>
+      <div class="ctl"><label>Gaz MQ-2 (valeur ADC) <b id="vG">420</b></label><input type="range" id="iG" min="0" max="4095" step="10" value="420"></div>
+      <div class="tg">
+        <button class="tgb" id="tP">🚶 Mouvement PIR</button>
+        <button class="tgb on" id="tW">📶 Wi-Fi connecté</button>
+        <button class="tgb on" id="tGW">🌐 Passerelle répond</button>
+        <button class="tgb on" id="tM">✉ Identifiants e-mail</button>
+        <button class="tgb" id="tS">🔔 Son</button>
+      </div>
+      <p class="note">Seuils de la carte : gaz &gt; 2000 critique (TP2), &gt; 1500 pré-alerte ; température ≥ 28 / 35 °C ; humidité &lt; 20 % ou &gt; 60 % attention, &gt; 80 % critique. Délai anti-spam e-mail : 120 s sur la carte, 20 s ici.</p>
+    </div>
+    <div class="panel rv d1">
+      <h3>📟 Sortie de la carte</h3>
+      <div class="oledwrap"><canvas class="oled" id="oledSim" width="640" height="320"></canvas></div>
+      <div class="leds"><span class="led g" id="sg"></span><span class="led y" id="sy"></span><span class="led r" id="sr"></span>
+        <div class="buzz" id="sbz"><svg viewBox="0 0 24 24"><path d="M11 5 6 9H2v6h4l5 4zM15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg>buzzer</div></div>
+      <div class="state"><span>Niveau global</span><b class="s0" id="ss">NORMAL</b></div>
+      <div class="log mono" id="log"></div>
+    </div>
+  </div>
+</div></section>
+
+<!-- COMPOSANTS -->
+<section id="composants"><div class="wrap">
+  <div class="eyebrow rv">Composants</div>
+  <h2 class="rv">Huit pièces, <span class="grad">un rôle chacune</span>.</h2>
+  <div class="cards" style="grid-template-columns:repeat(4,1fr)" id="compGrid"></div>
+  <style>@media(max-width:1000px){#compGrid{grid-template-columns:repeat(2,1fr)!important}}@media(max-width:560px){#compGrid{grid-template-columns:1fr!important}}</style>
+  <div class="rv" style="margin-top:34px;border:1px solid var(--line);border-radius:20px;overflow:hidden;background:#fff"><img src="assets/fig_wiring.png" alt="Tableau de câblage" style="width:100%;display:block"></div>
+  <p class="note rv">Broches reprises des TP2 (PIR 14, LED 2 et 4, MQ-2 34/26) et TP3 (I2C 21/22).</p>
+</div></section>
+
+<!-- DEMO -->
+<section id="demo"><div class="wrap">
+  <div class="eyebrow rv">Démonstration Wokwi</div>
+  <h2 class="rv">La vraie simulation <span class="grad">ESP32 + MicroPython</span>.</h2>
+  <p class="lead rv">Capture réelle de l'exécution du firmware dans le simulateur Wokwi. Cliquez sur les repères pour comprendre chaque zone.</p>
+  <div class="wokwi rv">
+    <h3>▶ Lancer la simulation</h3>
+    <p>Le projet complet (schéma + code) tourne dans votre navigateur. Cliquez sur « Start » dans Wokwi, puis tapez <span class="mono">n</span>, <span class="mono">m</span>, <span class="mono">s</span> ou <span class="mono">g</span> dans la console série.</p>
+    <a class="btn pri big pulse-btn" href="#" id="wokwiBtn" data-wokwi>▶ Ouvrir le projet dans Wokwi</a>
+  </div>
+  <div class="shots">
+    <div class="shot rv" id="shot"><img src="assets/wokwi_run_real.jpg" alt="Capture réelle de la simulation Wokwi : schéma, écran OLED et console série">
+      <button class="hs" style="left:85%;top:30%" data-h="0">1</button>
+      <button class="hs" style="left:95%;top:52%" data-h="1">2</button>
+      <button class="hs" style="left:72%;top:86%" data-h="2">3</button>
+      <button class="hs" style="left:22%;top:40%" data-h="3">4</button>
+    </div>
+    <div class="legend rv d1" id="legend">
+      <div class="lg" data-h="0"><i>1</i><div><b>Écran OLED (SSD1306, I2C)</b><span>Titre + heure, T/H, gaz/PIR, réseau, IP, état, e-mail — 7 lignes de 16 caractères.</span></div></div>
+      <div class="lg" data-h="1"><i>2</i><div><b>LED d'état</b><span>Verte = normal, jaune = attention, rouge = critique (avec buzzer).</span></div></div>
+      <div class="lg" data-h="2"><i>3</i><div><b>Console série</b><span>Journal : Wi-Fi connecté (10.10.0.2), heure NTP, changements d'état et causes.</span></div></div>
+      <div class="lg" data-h="3"><i>4</i><div><b>Code MicroPython</b><span>Les 7 fichiers du projet sont chargés dans l'éditeur Wokwi.</span></div></div>
+    </div>
+  </div>
+  <h3 class="rv" style="margin-top:46px;font-size:22px">Les quatre écrans types <span style="color:var(--mu);font-size:14px;font-weight:400">(reconstitués depuis la vraie fonction d'affichage)</span></h3>
+  <div class="oleds rv">
+    <figure><img src="assets/oled_normal.png" alt="OLED normal"><figcaption>Normal</figcaption></figure>
+    <figure><img src="assets/oled_gaz.png" alt="OLED gaz critique"><figcaption>Gaz &gt; 2000 · e-mail envoyé</figcaption></figure>
+    <figure><img src="assets/oled_wifi.png" alt="OLED Wi-Fi perdu"><figcaption>Wi-Fi perdu</figcaption></figure>
+    <figure><img src="assets/oled_temp.png" alt="OLED surchauffe et intrusion"><figcaption>36 °C + intrusion</figcaption></figure>
+  </div>
+  <div class="two">
+    <div class="list ok rv"><h3>Vérifié dans Wokwi</h3><ul>
+      <li>Démarrage du firmware et affichage OLED</li><li>Wi-Fi <span class="mono">Wokwi-GUEST</span> : IP 10.10.0.2, passerelle 10.0.0.1</li>
+      <li>Heure NTP synchronisée</li><li>Passerelle joignable en TCP sur le port 53 (le port 80 ne répond pas)</li>
+      <li>Gmail SMTP (465/587) joignable en TCP · repli « LOCAL » observé</li></ul></div>
+    <div class="list no rv d1"><h3>Limites annoncées</h3><ul>
+      <li>E-mail authentifié non envoyé (pas d'identifiants dans la simulation)</li>
+      <li>MQ-2 simulé : ~1900–2100 bruité, quel que soit « ppm » — l'état oscille autour de 2000</li>
+      <li>PIR, DHT22 hors seuil, panne réseau : validés sur PC (27 tests), pas rejoués dans Wokwi</li>
+      <li>Passerelle testée par TCP, pas par ping (ICMP indisponible)</li></ul></div>
+  </div>
+</div></section>
+
+<!-- COURS -->
+<section id="cours"><div class="wrap">
+  <div class="eyebrow rv">Traçabilité</div>
+  <h2 class="rv">Chaque fonction est <span class="grad">reliée au cours</span>.</h2>
+  <p class="lead rv">Filtrez par chapitre ou TP pour voir ce qui a été réutilisé.</p>
+  <div class="chips rv" id="chips"></div>
+  <div class="tr rv"><table><thead><tr><th>#</th><th>Fonctionnalité</th><th>Chapitre / TP</th><th>Notion du cours</th><th>Fichier</th></tr></thead><tbody id="trb"></tbody></table></div>
+</div></section>
+
+<!-- LIVRABLES -->
+<section id="livrables"><div class="wrap">
+  <div class="eyebrow rv">Livrables</div>
+  <h2 class="rv">Tout est <span class="grad">à portée de clic</span>.</h2>
+  <div class="dl">
+    <div class="dcard rv"><div class="n">01</div><h4>Présentation</h4><p>16 diapositives avec notes orateur. Aperçu interactif ci-dessous.</p><div class="row"><a class="btn sm" href="livrables/1_Presentation_PowerPoint/Presentation_surveillance_local_technique.pptx">PowerPoint</a><a class="btn sm" href="livrables/1_Presentation_PowerPoint/Presentation_surveillance_local_technique.pdf">PDF</a></div></div>
+    <div class="dcard rv d1"><div class="n">02</div><h4>Rapport</h4><p>Contexte, objectifs, architecture, fonctionnement, traçabilité, tests, limites.</p><div class="row"><a class="btn sm" href="livrables/2_Rapport/Rapport_surveillance_local_technique.docx">Word</a><a class="btn sm" href="livrables/2_Rapport/Rapport_surveillance_local_technique.pdf">PDF</a></div></div>
+    <div class="dcard rv d2"><div class="n">03</div><h4>Script oral</h4><p>15 minutes, partie par partie, avec des phrases simples et naturelles.</p><div class="row"><a class="btn sm" href="livrables/3_Script_oral/Script_oral_surveillance_local_technique.docx">Word</a><a class="btn sm" href="livrables/3_Script_oral/Script_oral_surveillance_local_technique.pdf">PDF</a></div></div>
+    <div class="dcard rv d3"><div class="n">04</div><h4>Questions du jury</h4><p>11 questions probables avec réponses détaillées (aussi ci-dessous).</p><div class="row"><a class="btn sm" href="livrables/4_Questions_jury_et_reponses/Questions_jury_et_reponses.docx">Word</a><a class="btn sm" href="livrables/4_Questions_jury_et_reponses/Questions_jury_et_reponses.pdf">PDF</a></div></div>
+  </div>
+  <div class="deck">
+    <div class="viewer rv"><img id="vimg" src="assets/slides/s-01.jpg" alt="Diapositive 1"><button class="vn l" id="vp" aria-label="Précédent">‹</button><button class="vn r" id="vnx" aria-label="Suivant">›</button></div>
+    <div class="thumbs" id="thumbs"></div>
+  </div>
+  <div class="cta" style="margin-top:34px"><a class="btn" href="wokwi/">📁 Projet Wokwi (diagram.json + code)</a><a class="btn" href="firmware/">🐍 Code source</a><a class="btn" href="tests/">🧪 Tests</a><a class="btn" href="docs/TRACABILITE.md">🔗 Matrice de traçabilité</a></div>
+</div></section>
+
+<!-- JURY -->
+<section id="jury"><div class="wrap">
+  <div class="eyebrow rv">Questions du jury</div>
+  <h2 class="rv">Les questions probables, <span class="grad">avec réponses</span>.</h2>
+  <div class="qa" id="qa"></div>
+</div></section>
+
+<footer><div class="wrap"><div class="big">SentinelRack</div>
+  <div>Surveillance intelligente d'un local technique télécom · Amal Karaoud · MicroPython (MPI1) · Faculté des Sciences de Sfax · 2026-2027 · Encadrante : Roua Torjmen</div></div></footer>
+
+<div class="lb" id="lb"><img id="lbi" alt=""></div>
+<div class="lb" id="md"><div class="modal" onclick="event.stopPropagation()"><h3>Ouvrir le projet dans Wokwi</h3><p style="color:var(--mu)">Le lien public du projet n'est pas encore renseigné. En attendant :</p><ol><li>Ouvrir un nouveau projet MicroPython ESP32</li><li>Remplacer <span class="mono">diagram.json</span> par celui du dossier <span class="mono">wokwi/</span></li><li>Ajouter les fichiers Python de <span class="mono">wokwi/</span></li><li>Cliquer sur ▶ Start</li></ol><a class="btn pri" target="_blank" rel="noopener" href="https://wokwi.com/projects/new/micropython-esp32">Ouvrir Wokwi</a></div></div>
+
+<script>
+const WOKWI_URL = "";   // lien public du projet Wokwi (à renseigner)
+const QA = [["Pourquoi ce projet ?", "Parce que c'est un problème réel : un local technique est souvent sans personne. Il utilise tout le cours : GPIO, capteurs, écran, Wi-Fi, e-mail."], ["Pourquoi le seuil 2000 ?", "C'est le seuil du TP2 sur la valeur analogique du MQ-2 (0 à 4095). L'alerte part quand la valeur dépasse strictement 2000. J'ai ajouté une pré-alerte à 1500, qui est mon choix."], ["Comment testez-vous la passerelle sans ping ?", "Le ping (ICMP) n'existe pas en MicroPython ni dans Wokwi. Je tente une connexion TCP : acceptée ou refusée veut dire que la passerelle répond. Dans Wokwi, le port 80 est injoignable et le port 53 répond, donc je teste le 53."], ["Que se passe-t-il si le Wi-Fi tombe ?", "L'OLED affiche « WiFi:PERDU », l'état passe à ATTENTION (cause WIFI), la carte retente la connexion toutes les 10 secondes. Aucun e-mail n'est tenté puisqu'il ne partirait pas."], ["L'e-mail a-t-il été vraiment envoyé ?", "Non, pas dans cette version : je n'ai pas d'identifiants dans le simulateur. J'ai vérifié que la connexion TCP vers Gmail est possible et testé mon client SMTP contre un faux serveur local. Si l'envoi est impossible, l'alerte reste sur l'OLED et la console."], ["Pourquoi un mot de passe d'application ?", "Gmail refuse le mot de passe normal pour les programmes. Le mot de passe d'application se met dans mail_config.py, qui n'est jamais publié."], ["Pourquoi attendre 10 secondes pour le gaz ?", "Le MQ-2 chauffe au démarrage. Dans le simulateur, la première lecture vaut 3123 puis redescend. On l'affiche avec une étoile mais on ne décide pas dessus."], ["Pourquoi séparer monitor.py du reste ?", "Monitor.py ne touche pas le matériel : je le teste sur PC avec 27 tests, puis il tourne à l'identique sur l'ESP32."], ["Le gaz oscille entre ATTENTION et CRITIQUE dans la simulation, pourquoi ?", "Le MQ-2 simulé donne environ 1900 à 2100 avec du bruit, quelle que soit la valeur ppm. Je n'ai pas élucidé la cause ; sur matériel réel il faut calibrer. Les scénarios de gaz sont validés sur la logique, sur PC."], ["Qu'est-ce qui est le vôtre et qu'est-ce qui vient du cours ?", "Les broches, le seuil 2000, l'OLED, le Wi-Fi et l'interface umail viennent du cours. Les seuils de température, la pré-alerte, l'anti-spam, la sonde de passerelle et la séparation logique/matériel sont mes choix. Le client SMTP et le pilote OLED sont réécrits avec la même interface."], ["Que feriez-vous ensuite ?", "Envoyer les mesures vers un serveur MQTT, journaliser avec l'heure, rendre les seuils réglables, ajouter une alimentation de secours."]];
+const TRACE = [["1", "Lecture du capteur de mouvement PIR (GPIO 14)", "Chap. 3 / TP2 ex.1", "Pin(14, Pin.IN), pir.value()", "main.py"], ["2", "Lecture analogique du MQ-2 (GPIO 34), seuil 2000", "Chap. 3 / TP2 ex.2", "ADC, atten(ADC.ATTN_11DB), read(), alerte si valeur **> 2000**", "main.py, monitor.py (gas_level)"], ["3", "Sortie numerique du MQ-2 (GPIO 26)", "Chap. 3 / TP2 ex.2", "Pin.IN", "main.py"], ["4", "Temperature et humidite DHT22", "Chap. 3 (capteurs)", "module dht, measure(), temperature(), humidity()", "main.py"], ["5", "LED d'etat (verte GPIO 12, jaune GPIO 4, rouge GPIO 2)", "Chap. 1 / TP1, TP2", "Pin(n, Pin.OUT), value()", "main.py, monitor.py (leds)"], ["6", "Buzzer d'alerte (GPIO 25)", "Chap. 1 / TP1", "sortie GPIO / PWM, time.sleep_ms", "main.py, monitor.py (buzzer_on)"], ["7", "Ecran OLED SSD1306 en I2C (SDA 21, SCL 22)", "Chap. 4 / TP3", "I2C, SSD1306_I2C, fill, text, show", "main.py, ssd1306.py"], ["8", "Affichage mesures + etat + reseau + IP + heure", "Chap. 4 / TP3", "affichage de texte, IP, heure", "monitor.py (screen_lines)"], ["9", "Connexion Wi-Fi, adresse IP", "Chap. 1 et Chap. 4 / TP3", "module network, WLAN(STA_IF), connect, isconnected, ifconfig", "net.py"], ["10", "Test de la passerelle", "Chap. 1 (reseaux)", "notion de passerelle, TCP/IP, sockets", "net.py (gateway_probe)"], ["11", "Detection de perte Wi-Fi affichee sur l'OLED", "Chap. 1 + Chap. 4", "isconnected(), reconnexion", "net.py, main.py, monitor.py"], ["12", "Heure reseau (NTP)", "Chap. 4 / TP3", "ntptime, time.localtime", "net.py"], ["13", "Alerte e-mail SMTP", "Chap. 5", "umail.SMTP(host, port, ssl=True, ...), to(), write(), send()", "umail.py, notify.py"], ["14", "Repli sans e-mail : OLED + console", "Chap. 5 (limites)", "print, exceptions try/except", "notify.py"], ["15", "Logique pure testable", "Notions du langage (fonctions, dict, classes, exceptions)", "fonctions, dict, classe AlertManager, try/except", "monitor.py, tests/"]];
+const COMPS = [
+ ["ESP32 DevKit C","Cerveau Wi-Fi qui exécute MicroPython et la logique de décision.","—","M9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4M6 6h12v12H6z","var(--cy)"],
+ ["DHT22","Mesure la température et l'humidité (module dht).","GPIO 15","M14 14.8V4a2 2 0 0 0-4 0v10.8a4 4 0 1 0 4 0z","var(--am)"],
+ ["MQ-2","Détecte gaz et fumée : sortie analogique (seuil 2000) et numérique.","GPIO 34 / 26","M12 3c1 3 5 5 5 9a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-3-1-5 1-8z","var(--rd)"],
+ ["PIR","Détecte un mouvement : l'alarme d'intrusion.","GPIO 14","M12 4a3 3 0 1 0 0 6 3 3 0 0 0 0-6zM5 21v-2a5 5 0 0 1 5-5h4a5 5 0 0 1 5 5v2","var(--vi)"],
+ ["OLED SSD1306","Affiche mesures, état, réseau, IP et heure (I2C, adresse 0x3C).","SDA 21 · SCL 22","M3 5h18v12H3zM8 21h8M12 17v4","var(--cy)"],
+ ["3 LED + 330 Ω","Vert = normal, jaune = attention, rouge = critique.","GPIO 12 · 4 · 2","M12 3a6 6 0 0 0-4 10.5V17h8v-3.5A6 6 0 0 0 12 3zM9 21h6","var(--gr)"],
+ ["Buzzer","Alerte sonore : bips rapides en critique, bip bref en attention.","GPIO 25 (PWM)","M11 5 6 9H2v6h4l5 4zM15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13","var(--am)"],
+ ["Wi-Fi + SMTP","Connexion, test de passerelle, heure NTP, e-mail d'alerte (umail).","network · socket","M5 12a10 10 0 0 1 14 0M8.5 15.5a5 5 0 0 1 7 0M12 19h.01","var(--vi)"]];
+
+/* ---------- reveal, counters, progress, nav ---------- */
+const io = new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}}),{threshold:.12});
+document.querySelectorAll('.rv').forEach(el=>io.observe(el));
+document.querySelectorAll('[data-n]').forEach(el=>{const t=+el.dataset.n;let s=null;const f=ts=>{s=s||ts;const p=Math.min((ts-s)/1600,1);el.textContent=Math.round(t*(1-Math.pow(1-p,3)));if(p<1)requestAnimationFrame(f)};setTimeout(()=>requestAnimationFrame(f),500)});
+const prog=document.getElementById('prog');
+const links=[...document.querySelectorAll('nav ul a')];
+const secs=links.map(a=>document.querySelector(a.getAttribute('href')));
+addEventListener('scroll',()=>{prog.style.width=(scrollY/(document.body.scrollHeight-innerHeight)*100)+'%';let c=0;secs.forEach((s,i)=>{if(s.getBoundingClientRect().top<innerHeight*.4)c=i});links.forEach((a,i)=>a.classList.toggle('on',i===c))},{passive:true});
+const dev=document.getElementById('device');
+dev.parentElement.addEventListener('mousemove',e=>{const r=dev.getBoundingClientRect(),x=(e.clientX-r.left)/r.width-.5,y=(e.clientY-r.top)/r.height-.5;dev.style.transform=`perspective(900px) rotateY(${x*10}deg) rotateX(${-y*10}deg)`});
+dev.parentElement.addEventListener('mouseleave',()=>dev.style.transform='');
+
+/* ---------- Wokwi links ---------- */
+document.querySelectorAll('[data-wokwi]').forEach(a=>{
+  if(WOKWI_URL){a.href=WOKWI_URL;a.target='_blank';a.rel='noopener'}
+  else a.addEventListener('click',e=>{if(a.getAttribute('href')==='#'||a.hasAttribute('data-wokwi')){if(a.id==='wokwiBtn'||a.dataset.wokwi!==undefined&&a.closest('nav')){e.preventDefault();document.getElementById('md').classList.add('on')}}});
+});
+document.getElementById('md').addEventListener('click',()=>document.getElementById('md').classList.remove('on'));
+
+/* ---------- logic port of monitor.py ---------- */
+const OK=0,WARN=1,CRIT=2,NAMES=['NORMAL','ATTENTION','CRITIQUE'];
+const tL=t=>t>=35?CRIT:t>=28?WARN:OK, hL=h=>h>80?CRIT:(h>60||h<20)?WARN:OK, gL=g=>g>2000?CRIT:g>1500?WARN:OK;
+function evaluate(r){const c=[];
+  const a=tL(r.temp);if(a)c.push(['TEMP',a]);const b=hL(r.hum);if(b)c.push(['HUM',b]);
+  const g=gL(r.gas);if(g)c.push(['GAZ',g]);if(r.pir)c.push(['PIR',WARN]);
+  if(!r.wifi)c.push(['WIFI',WARN]);else if(!r.gw)c.push(['GW',WARN]);
+  return [Math.max(0,...c.map(x=>x[1])),c]}
+function lines(r,lv,ca,mail){const clk=new Date().toTimeString().slice(0,5);
+  const net=!r.wifi?'WiFi:PERDU':!r.gw?'WiFi OK GW:NON':'WiFi OK GW OK';
+  const etat=lv===OK?'ETAT: NORMAL':'!'+ca.map(x=>x[0]).join(',');
+  return[('SALLE TECH '+clk).slice(0,16),('T:'+r.temp.toFixed(1)+'C H:'+Math.round(r.hum)+'%').slice(0,16),('GAZ:'+Math.round(r.gas)+' PIR:'+(r.pir?'OUI':'--')).slice(0,16),net.slice(0,16),('IP '+(r.wifi?'10.10.0.2':'-')).slice(0,16),etat.slice(0,16),('Mail:'+mail).slice(0,16)]}
+function drawOled(cv,ls,lv){const x=cv.getContext('2d');x.fillStyle='#02070a';x.fillRect(0,0,640,320);
+  x.font='700 36px ui-monospace,Menlo,Consolas,monospace';x.textBaseline='top';
+  ls.forEach((t,i)=>{x.fillStyle=(i===5&&lv===CRIT)?'#ff6b86':(i===5&&lv===WARN)?'#ffd166':(i===3&&/PERDU|NON/.test(t))?'#ffd166':'#7ff0ff';x.shadowColor=x.fillStyle;x.shadowBlur=8;x.fillText(t,6,i*45+4)});x.shadowBlur=0}
+
+const S={temp:24,hum:40,gas:420,pir:0,wifi:1,gw:1,cred:1,sound:0};
+let mail='--',tick=0,lastMail={},lvl=0,causes=[],audio=null;
+const $=id=>document.getElementById(id);
+function logLine(t,c){const l=$('log'),d=document.createElement('div');if(c)d.className=c;d.textContent=new Date().toTimeString().slice(0,8)+'  '+t;l.appendChild(d);l.scrollTop=l.scrollHeight;while(l.children.length>60)l.removeChild(l.firstChild)}
+let prevKey='';
+function step(){
+  const [lv,ca]=evaluate(S);lvl=lv;causes=ca;
+  const key=ca.map(x=>x.join(':')).join(',');
+  if(key!==prevKey){logLine('etat='+NAMES[lv]+' causes=['+ca.map(x=>x[0]).join(', ')+'] T='+S.temp.toFixed(1)+' H='+Math.round(S.hum)+' gaz='+Math.round(S.gas),lv===CRIT?'e':lv===WARN?'w':'');prevKey=key}
+  // e-mail manager (20 s demo cooldown)
+  const now=Date.now()/1000;const due=ca.filter(([c,l])=>l>=WARN&&c!=='WIFI'&&c!=='GW'&&(!(c in lastMail)||now-lastMail[c]>20));
+  Object.keys(lastMail).forEach(c=>{if(!ca.some(x=>x[0]===c))delete lastMail[c]});
+  if(due.length){due.forEach(([c])=>lastMail[c]=now);const ok=S.wifi&&S.cred;mail=ok?'SMTP':'LOCAL';
+    logLine((ok?'MAIL> SMTP envoyé (simulé) : ':'MAIL> LOCAL (repli OLED + console) : ')+'['+(lv===CRIT?'CRITIQUE':'ATTENTION')+'] Local technique : '+due.map(x=>x[0]).join(', '),'m')}
+  const ls=lines(S,lv,ca,mail);drawOled($('oledSim'),ls,lv);drawOled($('oledHero'),ls,lv);
+  [['g','y','r'].map((k,i)=>[$('s'+k),$('h'+k),i])].flat().forEach(([a,b,i])=>{const on=i===0?lv===OK:i===1?lv===WARN:lv===CRIT;a.classList.toggle('on',on);b.classList.toggle('on',on)});
+  ['ss','hs'].forEach(id=>{const e=$(id);e.textContent=NAMES[lv];e.className='s'+lv});
+  const bz=lv===CRIT?tick%2===0:lv===WARN?tick%10===0:false;
+  ['sbz','hbz'].forEach(id=>$(id).classList.toggle('on',bz));
+  if(bz&&S.sound)beep(lv===CRIT?880:520);
+  tick++;paintArch()}
+function beep(f){try{audio=audio||new (window.AudioContext||window.webkitAudioContext)();const o=audio.createOscillator(),g=audio.createGain();o.frequency.value=f;o.type='square';g.gain.value=.04;o.connect(g);g.connect(audio.destination);o.start();o.stop(audio.currentTime+.12)}catch(e){}}
+setInterval(step,500);
+
+function sync(){$('vT').textContent=S.temp.toFixed(1)+' °C';$('vH').textContent=Math.round(S.hum)+' %';$('vG').textContent=Math.round(S.gas);
+  $('iT').value=S.temp;$('iH').value=S.hum;$('iG').value=S.gas;
+  $('tP').classList.toggle('on',!!S.pir);$('tW').classList.toggle('on',!!S.wifi);$('tGW').classList.toggle('on',!!S.gw);$('tM').classList.toggle('on',!!S.cred);$('tS').classList.toggle('on',!!S.sound);
+  $('tW').textContent=S.wifi?'📶 Wi-Fi connecté':'📵 Wi-Fi perdu';step()}
+$('iT').oninput=e=>{S.temp=+e.target.value;sync()};$('iH').oninput=e=>{S.hum=+e.target.value;sync()};$('iG').oninput=e=>{S.gas=+e.target.value;sync()};
+$('tP').onclick=()=>{S.pir=S.pir?0:1;sync()};$('tW').onclick=()=>{S.wifi=S.wifi?0:1;if(!S.wifi)S.gw=0;else S.gw=1;sync()};
+$('tGW').onclick=()=>{S.gw=S.gw?0:1;sync()};$('tM').onclick=()=>{S.cred=S.cred?0:1;sync()};
+$('tS').onclick=()=>{S.sound=S.sound?0:1;if(S.sound)beep(660);sync()};
+const SC={intrusion:{pir:1},fumee:{gas:2600},chaleur:{temp:37},humide:{hum:86},wifi:{wifi:0,gw:0},normal:{temp:24,hum:40,gas:420,pir:0,wifi:1,gw:1}};
+document.querySelectorAll('[data-sc]').forEach(b=>b.onclick=()=>{
+  if(b.dataset.sc==='normal'){Object.assign(S,SC.normal);lastMail={};mail='--'}else Object.assign(S,SC[b.dataset.sc]);
+  const f=$('flash');f.classList.remove('go');void f.offsetWidth;if(b.dataset.sc!=='normal')f.classList.add('go');sync()});
+
+/* ---------- architecture animation ---------- */
+const NS='http://www.w3.org/2000/svg';
+function packets(){[['p1','pkIn'],['p2','pkIn'],['p3','pkIn'],['p4','pkOut'],['p5','pkOut'],['p6','pkOut']].forEach(([p,g],i)=>{
+  for(let k=0;k<2;k++){const c=document.createElementNS(NS,'circle');c.setAttribute('r',5);c.setAttribute('class','pk');c.dataset.p=p;
+    const a=document.createElementNS(NS,'animateMotion');a.setAttribute('dur','2.6s');a.setAttribute('begin',(k*1.3+i*.2)+'s');a.setAttribute('repeatCount','indefinite');
+    const m=document.createElementNS(NS,'mpath');m.setAttributeNS('http://www.w3.org/1999/xlink','href','#'+p);a.appendChild(m);c.appendChild(a);$(g).appendChild(c)}})}
+packets();
+let stepIdx=0;
+function paintArch(){
+  const has=n=>causes.some(c=>c[0]===n),lv=(n)=>(causes.find(c=>c[0]===n)||[0,0])[1];
+  const set=(id,l)=>{const e=$(id);e.classList.toggle('hot',l===CRIT);e.classList.toggle('warn',l===WARN)};
+  set('nDHT',Math.max(has('TEMP')?lv('TEMP'):0,has('HUM')?lv('HUM'):0));set('nMQ',lv('GAZ'));set('nPIR',lv('PIR'));
+  set('nESP',0);
+  const out=lvl===CRIT?'red':lvl===WARN?'amb':'';
+  ['p4','p5','p6','p1','p2','p3'].forEach(p=>{const e=$(p);e.classList.remove('red','amb');if(out)e.classList.add(out)});
+  document.querySelectorAll('.pk').forEach(c=>{c.classList.remove('red','amb');if(out)c.classList.add(out)});
+  $('nMAIL').classList.toggle('hot',false);
+}
+const STEPS=[
+ ['<b>1 · Lire.</b> Toutes les 500 ms, l\'ESP32 lit trois capteurs : le DHT22 (température, humidité toutes les 2 s), le MQ-2 (moyenne de 5 lectures analogiques 0–4095) et le PIR (mouvement oui/non).',[0]],
+ ['<b>2 · Décider.</b> <span class="mono">monitor.py</span> compare chaque mesure aux seuils et calcule le niveau global : NORMAL, ATTENTION ou CRITIQUE, avec la liste des causes (TEMP, HUM, GAZ, PIR, WIFI, GW, DHT). Ce fichier ne touche aucun matériel : il est testé sur PC.',[1]],
+ ['<b>3 · Afficher.</b> L\'écran OLED montre 7 lignes (mesures, état, réseau, IP, heure). Une LED s\'allume selon le niveau et le buzzer émet ses bips.',[2]],
+ ['<b>4 · Alerter.</b> Sur événement, un e-mail SMTP part (une fois par cause, puis au plus toutes les 120 s). Sans réseau ou sans identifiants : repli sur l\'OLED et la console série. La carte vérifie aussi le Wi-Fi et la passerelle.',[3]]];
+function setStep(i){stepIdx=i;document.querySelectorAll('.stp').forEach((b,k)=>{b.classList.remove('on');if(k===i){void b.offsetWidth;b.classList.add('on')}});
+  $('stpText').innerHTML=STEPS[i][0];
+  document.querySelectorAll('#archSvg .nd').forEach(n=>n.classList.toggle('act',STEPS[i][1].includes(+n.dataset.g)));
+  const act=['p1,p2,p3','','p4,p5','p6'][i].split(',');['p1','p2','p3','p4','p5','p6'].forEach(p=>$(p).classList.toggle('act',act.includes(p)));
+  if(i===1)['p1','p2','p3'].forEach(p=>$(p).classList.add('act'));if(i===2)$('p4').classList.add('act');if(i===3)$('p6').classList.add('act');
+  document.querySelectorAll('.stp').forEach(b=>b.style.setProperty('--dur','4.5s'))}
+let auto=setInterval(()=>setStep((stepIdx+1)%4),4500);
+document.querySelectorAll('.stp').forEach(b=>b.onclick=()=>{clearInterval(auto);setStep(+b.dataset.s);auto=setInterval(()=>setStep((stepIdx+1)%4),4500)});
+setStep(0);
+/* ---------- composants ---------- */
+$('compGrid').innerHTML=COMPS.map((c,i)=>`<div class="card rv d${i%4}" style="--c:${c[4]}"><div class="ic"><svg viewBox="0 0 24 24"><path d="${c[3]}"/></svg></div><h3 style="font-size:18px">${c[0]}</h3><p style="font-size:14.5px">${c[1]}</p><span class="pin mono">${c[2]}</span></div>`).join('');
+document.querySelectorAll('#compGrid .rv').forEach(el=>io.observe(el));
+/* ---------- traçabilité ---------- */
+const CH=['Tous',...new Set(TRACE.map(r=>r[2].split(' / ')[0].replace(/ et Chap\.\s*\d/,'').replace(/ \+ .*/,'')))];
+const chips=$('chips');
+CH.forEach((c,i)=>{const b=document.createElement('button');b.className='chipb'+(i?'':' on');b.textContent=c;b.onclick=()=>{chips.querySelectorAll('.chipb').forEach(x=>x.classList.remove('on'));b.classList.add('on');
+  document.querySelectorAll('#trb tr').forEach(tr=>tr.classList.toggle('dim',i&&!tr.dataset.c.includes(c.replace('Chap. ','Chap. '))))};chips.appendChild(b)});
+$('trb').innerHTML=TRACE.map(r=>`<tr data-c="${r[2]}"><td>${r[0]}</td><td>${r[1]}</td><td><span class="tag">${r[2]}</span></td><td>${r[3]}</td><td>${r[4]}</td></tr>`).join('');
+/* ---------- deck viewer ---------- */
+let si=0;const N=16,sl=i=>`assets/slides/s-${String(i+1).padStart(2,'0')}.jpg`;
+const th=$('thumbs');for(let i=0;i<N;i++){const im=document.createElement('img');im.src=sl(i);im.alt='Diapo '+(i+1);im.loading='lazy';im.onclick=()=>show(i);th.appendChild(im)}
+function show(i){si=(i+N)%N;$('vimg').src=sl(si);$('vimg').alt='Diapositive '+(si+1);[...th.children].forEach((t,k)=>t.classList.toggle('on',k===si));th.children[si].scrollIntoView({inline:'center',block:'nearest',behavior:'smooth'})}
+$('vp').onclick=()=>show(si-1);$('vnx').onclick=()=>show(si+1);show(0);
+addEventListener('keydown',e=>{if(e.key==='Escape'){document.querySelectorAll('.lb').forEach(l=>l.classList.remove('on'))}});
+/* ---------- Q&A ---------- */
+$('qa').innerHTML=QA.map((q,i)=>`<details class="rv"><summary>${q[0]}</summary><p>${q[1]}</p></details>`).join('');
+document.querySelectorAll('#qa .rv').forEach(el=>io.observe(el));
+/* ---------- screenshot hotspots / lightbox ---------- */
+function hl(h){document.querySelectorAll('.lg').forEach(l=>l.classList.toggle('on',l.dataset.h===String(h)))}
+document.querySelectorAll('.hs').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();hl(b.dataset.h)}));
+document.querySelectorAll('.lg').forEach(l=>l.addEventListener('mouseenter',()=>hl(l.dataset.h)));
+$('shot').addEventListener('click',()=>{$('lbi').src='assets/wokwi_run_real.jpg';$('lb').classList.add('on')});
+$('lb').addEventListener('click',()=>$('lb').classList.remove('on'));
+sync();
+</script>
+</body>
+</html>
