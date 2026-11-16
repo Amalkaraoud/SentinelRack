@@ -1,0 +1,128 @@
+[
+ {
+  "scenario": "S1 Fonctionnement normal",
+  "niveau": "OK",
+  "causes": [],
+  "leds": [
+   1,
+   0,
+   0
+  ],
+  "buzzer": "silence"
+ },
+ {
+  "scenario": "S2 Temperature 29 C",
+  "niveau": "ATTENTION",
+  "causes": [
+   "TEMP"
+  ],
+  "leds": [
+   0,
+   1,
+   0
+  ],
+  "buzzer": "bip / 5 s"
+ },
+ {
+  "scenario": "S3 Temperature 36 C",
+  "niveau": "CRITIQUE",
+  "causes": [
+   "TEMP"
+  ],
+  "leds": [
+   0,
+   0,
+   1
+  ],
+  "buzzer": "bips rapides"
+ },
+ {
+  "scenario": "S4 Gaz 1800 (pre-alerte)",
+  "niveau": "ATTENTION",
+  "causes": [
+   "GAZ"
+  ],
+  "leds": [
+   0,
+   1,
+   0
+  ],
+  "buzzer": "bip / 5 s"
+ },
+ {
+  "scenario": "S5 Gaz 2300 (> 2000)",
+  "niveau": "CRITIQUE",
+  "causes": [
+   "GAZ"
+  ],
+  "leds": [
+   0,
+   0,
+   1
+  ],
+  "buzzer": "bips rapides"
+ },
+ {
+  "scenario": "S6 Intrusion (PIR)",
+  "niveau": "ATTENTION",
+  "causes": [
+   "PIR"
+  ],
+  "leds": [
+   0,
+   1,
+   0
+  ],
+  "buzzer": "bip / 5 s"
+ },
+ {
+  "scenario": "S7 Wi-Fi perdu",
+  "niveau": "ATTENTION",
+  "causes": [
+   "WIFI"
+  ],
+  "leds": [
+   0,
+   1,
+   0
+  ],
+  "buzzer": "bip / 5 s"
+ },
+ {
+  "scenario": "S8 Wi-Fi ok, passerelle muette",
+  "niveau": "ATTENTION",
+  "causes": [
+   "GW"
+  ],
+  "leds": [
+   0,
+   1,
+   0
+  ],
+  "buzzer": "bip / 5 s"
+ },
+ {
+  "scenario": "S9 DHT22 en panne",
+  "niveau": "ATTENTION",
+  "causes": [
+   "DHT"
+  ],
+  "leds": [
+   0,
+   1,
+   0
+  ],
+  "buzzer": "bip / 5 s"
+ },
+ {
+  "scenario": "S10 Gaz eleve pendant le prechauffage",
+  "niveau": "OK",
+  "causes": [],
+  "leds": [
+   1,
+   0,
+   0
+  ],
+  "buzzer": "silence"
+ }
+]

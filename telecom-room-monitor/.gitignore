@@ -1,0 +1,5 @@
+firmware/mail_config.py
+wokwi/mail_config.py
+__pycache__/
+*.pyc
+.pytest_cache/

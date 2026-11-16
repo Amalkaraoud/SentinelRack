@@ -1,0 +1,282 @@
+{
+  "version": 1,
+  "author": "Amal Karaoud",
+  "editor": "wokwi",
+  "parts": [
+    {
+      "type": "board-esp32-devkit-c-v4",
+      "id": "esp",
+      "top": 0.0,
+      "left": 0,
+      "attrs": {
+        "env": "micropython-20231005-v1.21.0"
+      }
+    },
+    {
+      "type": "wokwi-dht22",
+      "id": "dht",
+      "top": -143.0,
+      "left": -190,
+      "attrs": {
+        "temperature": "24",
+        "humidity": "40"
+      }
+    },
+    {
+      "type": "wokwi-gas-sensor",
+      "id": "gas",
+      "top": 20.0,
+      "left": -300,
+      "attrs": {
+        "ppm": "400"
+      }
+    },
+    {
+      "type": "wokwi-pir-motion-sensor",
+      "id": "pir",
+      "top": 190.0,
+      "left": -230,
+      "attrs": {}
+    },
+    {
+      "type": "board-ssd1306",
+      "id": "oled",
+      "top": -150.0,
+      "left": 150,
+      "attrs": {
+        "i2cAddress": "0x3c"
+      }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "lg",
+      "top": -5.0,
+      "left": 300,
+      "attrs": {
+        "color": "green",
+        "label": "OK"
+      }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "ly",
+      "top": 50.0,
+      "left": 300,
+      "attrs": {
+        "color": "yellow",
+        "label": "ATTENTION"
+      }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "lr",
+      "top": 105.0,
+      "left": 300,
+      "attrs": {
+        "color": "red",
+        "label": "CRITIQUE"
+      }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "rg",
+      "top": 10.0,
+      "left": 225,
+      "attrs": {
+        "value": "330"
+      }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "ry",
+      "top": 65.0,
+      "left": 225,
+      "attrs": {
+        "value": "330"
+      }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "rr",
+      "top": 120.0,
+      "left": 225,
+      "attrs": {
+        "value": "330"
+      }
+    },
+    {
+      "type": "wokwi-buzzer",
+      "id": "bz",
+      "top": 190.0,
+      "left": 170,
+      "attrs": {
+        "volume": "0.1"
+      }
+    }
+  ],
+  "connections": [
+    [
+      "esp:TX",
+      "$serialMonitor:RX",
+      "",
+      []
+    ],
+    [
+      "esp:RX",
+      "$serialMonitor:TX",
+      "",
+      []
+    ],
+    [
+      "esp:21",
+      "oled:SDA",
+      "purple",
+      []
+    ],
+    [
+      "esp:22",
+      "oled:SCL",
+      "gold",
+      []
+    ],
+    [
+      "esp:3V3",
+      "oled:VCC",
+      "red",
+      []
+    ],
+    [
+      "esp:GND.1",
+      "oled:GND",
+      "black",
+      []
+    ],
+    [
+      "esp:15",
+      "dht:SDA",
+      "green",
+      []
+    ],
+    [
+      "esp:3V3",
+      "dht:VCC",
+      "red",
+      []
+    ],
+    [
+      "esp:GND.1",
+      "dht:GND",
+      "black",
+      []
+    ],
+    [
+      "esp:34",
+      "gas:AO",
+      "orange",
+      []
+    ],
+    [
+      "esp:26",
+      "gas:DO",
+      "gold",
+      []
+    ],
+    [
+      "esp:3V3",
+      "gas:VCC",
+      "red",
+      []
+    ],
+    [
+      "esp:GND.1",
+      "gas:GND",
+      "black",
+      []
+    ],
+    [
+      "esp:14",
+      "pir:OUT",
+      "green",
+      []
+    ],
+    [
+      "esp:5V",
+      "pir:VCC",
+      "red",
+      []
+    ],
+    [
+      "esp:GND.1",
+      "pir:GND",
+      "black",
+      []
+    ],
+    [
+      "esp:12",
+      "rg:1",
+      "green",
+      []
+    ],
+    [
+      "rg:2",
+      "lg:A",
+      "green",
+      []
+    ],
+    [
+      "lg:C",
+      "esp:GND.2",
+      "black",
+      []
+    ],
+    [
+      "esp:4",
+      "ry:1",
+      "gold",
+      []
+    ],
+    [
+      "ry:2",
+      "ly:A",
+      "gold",
+      []
+    ],
+    [
+      "ly:C",
+      "esp:GND.2",
+      "black",
+      []
+    ],
+    [
+      "esp:2",
+      "rr:1",
+      "red",
+      []
+    ],
+    [
+      "rr:2",
+      "lr:A",
+      "red",
+      []
+    ],
+    [
+      "lr:C",
+      "esp:GND.2",
+      "black",
+      []
+    ],
+    [
+      "esp:25",
+      "bz:2",
+      "blue",
+      []
+    ],
+    [
+      "bz:1",
+      "esp:GND.2",
+      "black",
+      []
+    ]
+  ],
+  "dependencies": {}
+}
