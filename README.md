@@ -1,0 +1,1 @@
+﻿ESP32/MicroPython monitor for a telecom network rack: temperature, humidity, gas and motion sensing, OLED display, Wi-Fi and gateway checks, and SMTP e-mail alerts with local fallback. Simulated in Wokwi.
