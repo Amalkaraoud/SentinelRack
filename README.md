@@ -56,16 +56,6 @@ flowchart LR
 
 *OLED views are rebuilt from the real display function; the first image above is a genuine simulator capture.*
 
-##  Deliverables
-| # | Deliverable | Files |
-|---|---|---|
-| 1 | Slides (16, with speaker notes) | [PowerPoint](livrables/1_Presentation_PowerPoint/Presentation_surveillance_local_technique.pptx) · [PDF](livrables/1_Presentation_PowerPoint/Presentation_surveillance_local_technique.pdf) |
-| 2 | Full report | [Word](livrables/2_Rapport/Rapport_surveillance_local_technique.docx) · [PDF](livrables/2_Rapport/Rapport_surveillance_local_technique.pdf) |
-| 3 | Detailed oral script (15 min) | [Word](livrables/3_Script_oral/Script_oral_surveillance_local_technique.docx) · [PDF](livrables/3_Script_oral/Script_oral_surveillance_local_technique.pdf) |
-| 4 | Jury questions & answers | [Word](livrables/4_Questions_jury_et_reponses/Questions_jury_et_reponses.docx) · [PDF](livrables/4_Questions_jury_et_reponses/Questions_jury_et_reponses.pdf) |
-| 5 | Wokwi project (diagram + code) | [`wokwi/`](wokwi/) |
-
-Index in French: [`LIVRABLES.md`](LIVRABLES.md). Course traceability: [`docs/TRACABILITE.md`](docs/TRACABILITE.md).
 
 ##  Features
 - **Sensors:** DHT22 (temperature, humidity), MQ-2 (gas/smoke, critical threshold 2000), PIR (motion/intrusion).
