@@ -10,7 +10,7 @@ Temperature · gas/smoke · intrusion · Wi-Fi — monitored continuously, with 
 ![Tests](https://img.shields.io/badge/tests-27%20passing-34d399?style=for-the-badge)
 ![Course](https://img.shields.io/badge/MPI1-FSS%20Sfax%202026--27-8b7bff?style=for-the-badge)
 
-### [▶ &nbsp;LAUNCH THE SIMULATION ON WOKWI](https://wokwi.com/projects/new/micropython-esp32) &nbsp;·&nbsp; [🌐 INTERACTIVE SITE](index.html) &nbsp;·&nbsp; [📚 DELIVERABLES](#-deliverables)
+### [ &nbsp;LAUNCH THE SIMULATION ON WOKWI](https://wokwi.com/projects/new/micropython-esp32) &nbsp;·&nbsp; [ INTERACTIVE SITE](index.html) &nbsp;·&nbsp; [ DELIVERABLES](#-deliverables)
 
 </div>
 
