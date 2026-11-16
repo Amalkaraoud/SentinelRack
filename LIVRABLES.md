@@ -16,3 +16,7 @@
 
 Pour lancer la simulation : ouvrir un nouveau projet MicroPython ESP32 sur wokwi.com, remplacer `diagram.json`
 et ajouter les fichiers de `wokwi/` (voir `README.md`).
+
+## Liens en ligne
+- Simulation Wokwi : https://wokwi.com/projects/480883995310326785
+- Site interactif (GitHub Pages) : https://amalkaraoud.github.io/SentinelRack/
