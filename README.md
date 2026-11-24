@@ -14,7 +14,6 @@ Temperature · gas/smoke · intrusion · Wi-Fi — monitored continuously, with 
 
 </div>
 
-> The Wokwi button opens the saved project **SentinelRack** (circuit + the 8 files of [`wokwi/`](wokwi/)). Press ▶ Start, then type `n`, `m`, `s` or `g` in the serial console.
 
 ##  Interactive presentation site
 **Live site: https://amalkaraoud.github.io/SentinelRack/** (GitHub Pages).
